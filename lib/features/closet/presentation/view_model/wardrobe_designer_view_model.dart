@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/entities/wardrobe_layout_entity.dart';
 import '../../domain/usecases/closet_usecases.dart';
+import 'wardrobe_list_view_model.dart';
 
 enum DesignerStatus { initial, loading, ready, saving, error }
 
@@ -124,6 +125,9 @@ class WardrobeDesignerViewModel extends Notifier<WardrobeDesignerState> {
       },
       (saved) {
         state = state.copyWith(status: DesignerStatus.ready, layout: saved);
+        // Keep the shared wardrobe list in step, so the Closet tab and the
+        // layouts list show the change without waiting to be reloaded.
+        ref.read(wardrobeListViewModelProvider.notifier).upsert(saved);
         return true;
       },
     );

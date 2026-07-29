@@ -51,6 +51,28 @@ class WardrobeListViewModel extends Notifier<WardrobeListState> {
     );
   }
 
+  /// Reflect a just-saved wardrobe in the list straight away. Screens reach the
+  /// designer from several routes (Home, the Closet tab, Profile → Closet
+  /// layouts), and the Closet tab is kept alive inside an IndexedStack, so it
+  /// can't rely on a reload-on-pop to notice a new wardrobe.
+  void upsert(WardrobeLayoutEntity wardrobe) {
+    // Nothing trustworthy to merge into yet — fetch the real list instead.
+    if (state.status != WardrobeListStatus.ready) {
+      load();
+      return;
+    }
+
+    final next = [...state.wardrobes];
+    final index =
+        next.indexWhere((w) => w.id != null && w.id == wardrobe.id);
+    if (index >= 0) {
+      next[index] = wardrobe;
+    } else {
+      next.insert(0, wardrobe); // the backend lists newest first
+    }
+    state = state.copyWith(status: WardrobeListStatus.ready, wardrobes: next);
+  }
+
   /// Delete a wardrobe and drop it from the list optimistically.
   Future<bool> delete(String layoutId) async {
     final result = await ref.read(deleteWardrobeLayoutUsecaseProvider)(layoutId);
