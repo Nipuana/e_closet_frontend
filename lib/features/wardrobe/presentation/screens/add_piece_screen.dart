@@ -172,9 +172,26 @@ class _AddPieceScreenState extends ConsumerState<AddPieceScreen> {
     if (_step > 0) {
       setState(() => _step -= 1);
     } else {
-      Navigator.of(context).pop();
+      guardedPop(
+        context,
+        hasUnsavedChanges: _hasUnsavedChanges,
+        message: "You haven't added this piece yet. Leave without saving it?",
+        leaveLabel: 'Leave',
+      );
     }
   }
+
+  /// Has the user entered anything on the add flow? Used to guard accidental
+  /// exits so a half-filled piece isn't lost to a misclicked back button.
+  bool get _hasUnsavedChanges =>
+      _imagePath != null ||
+      _category != null ||
+      _brand != null ||
+      _season != null ||
+      _colors.isNotEmpty ||
+      _name.text.trim().isNotEmpty ||
+      _price.text.trim().isNotEmpty ||
+      _material.text.trim().isNotEmpty;
 
   Future<void> _submit() async {
     final params = AddItemParams(
@@ -210,7 +227,13 @@ class _AddPieceScreenState extends ConsumerState<AddPieceScreen> {
         ref.watch(addPieceViewModelProvider).status == AddPieceStatus.submitting;
     const labels = ['Capture', 'Details', 'Review'];
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        _onBack();
+      },
+      child: Scaffold(
       backgroundColor: palette.background,
       appBar: AppBar(
         backgroundColor: palette.background,
@@ -266,6 +289,7 @@ class _AddPieceScreenState extends ConsumerState<AddPieceScreen> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

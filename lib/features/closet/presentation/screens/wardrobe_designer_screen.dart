@@ -31,6 +31,12 @@ class WardrobeDesignerScreen extends ConsumerStatefulWidget {
 }
 
 class _WardrobeDesignerScreenState extends ConsumerState<WardrobeDesignerScreen> {
+  // The layout as it was when the planner opened. The current layout is
+  // compared against this to detect unsaved edits — [WardrobeLayoutEntity] is
+  // an Equatable value type, so this is a deep comparison of the whole plan.
+  late final WardrobeLayoutEntity _baseline =
+      widget.initial ?? WardrobeLayoutEntity.blank();
+
   @override
   void initState() {
     super.initState();
@@ -38,6 +44,18 @@ class _WardrobeDesignerScreenState extends ConsumerState<WardrobeDesignerScreen>
       ref.read(wardrobeDesignerViewModelProvider.notifier).init(widget.initial);
     });
   }
+
+  /// Has the plan changed since it opened? Guards accidental exits so an
+  /// in-progress closet layout isn't lost to a misclicked back button.
+  bool get _hasUnsavedChanges =>
+      ref.read(wardrobeDesignerViewModelProvider).layout != _baseline;
+
+  /// Leaves the planner, confirming first when there are unsaved edits.
+  Future<void> _handleClose() => guardedPop(
+        context,
+        hasUnsavedChanges: _hasUnsavedChanges,
+        message: 'Your closet plan has unsaved changes. Leave without saving them?',
+      );
 
   /// Hold a block → pop up a focused resize editor over a scrim. The planner
   /// behind it is locked until the user saves or discards their changes.
@@ -207,7 +225,13 @@ class _WardrobeDesignerScreenState extends ConsumerState<WardrobeDesignerScreen>
     final finishColor = _finishColors[layout.finish] ?? AppColors.camel;
     final saving = state.status == DesignerStatus.saving;
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        _handleClose();
+      },
+      child: Scaffold(
       backgroundColor: palette.background,
       appBar: AppBar(
         backgroundColor: palette.background,
@@ -216,7 +240,7 @@ class _WardrobeDesignerScreenState extends ConsumerState<WardrobeDesignerScreen>
         systemOverlayStyle: SystemUiOverlayStyle.dark,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new, size: AppSpacing.iconSm, color: palette.textPrimary),
-          onPressed: () => Navigator.pop(context),
+          onPressed: _handleClose,
         ),
         title: Text('Wardrobe Planner',
             style: AppTypography.headingMedium.copyWith(color: palette.textPrimary)),
@@ -340,6 +364,7 @@ class _WardrobeDesignerScreenState extends ConsumerState<WardrobeDesignerScreen>
             ),
           ],
         ),
+      ),
       ),
     );
   }

@@ -7,6 +7,7 @@ export 'widgets/app_toggle.dart';
 export 'widgets/app_card.dart';
 export 'widgets/app_badge.dart';
 export 'widgets/app_alert.dart';
+export 'widgets/discard_changes.dart';
 export 'widgets/app_divider.dart';
 export 'widgets/app_avatar.dart';
 export 'widgets/app_loading.dart';

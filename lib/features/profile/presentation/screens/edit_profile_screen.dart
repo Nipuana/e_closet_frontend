@@ -31,6 +31,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   String? _remotePicture; // Existing photo path from the session.
   String? _newImagePath; // Freshly picked/captured photo (local file).
+  String _loadedUsername = ''; // Username as loaded, to detect edits.
   bool _changed = false;
 
   @override
@@ -56,11 +57,26 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final pic = await session.getProfilePicture();
     if (!mounted) return;
     setState(() {
+      _loadedUsername = name ?? '';
       _username.text = name ?? '';
       _email.text = email ?? '';
       _remotePicture = pic;
     });
   }
+
+  /// Has the user changed anything they haven't saved yet? Guards accidental
+  /// exits (back button / system back) so edits aren't lost.
+  bool get _hasUnsavedChanges =>
+      _newImagePath != null ||
+      _username.text.trim() != _loadedUsername.trim() ||
+      _currentPassword.text.isNotEmpty ||
+      _newPassword.text.isNotEmpty ||
+      _confirmPassword.text.isNotEmpty;
+
+  /// Leaves the screen, confirming first if there are unsaved edits. Returns
+  /// [_changed] to the caller so it can refresh when something was saved.
+  Future<void> _handleClose() =>
+      guardedPop(context, hasUnsavedChanges: _hasUnsavedChanges, result: _changed);
 
   String? get _resolvedRemoteUrl {
     final url = _remotePicture;
@@ -180,7 +196,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final palette = context.palette;
     final state = ref.watch(editProfileViewModelProvider);
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        _handleClose();
+      },
+      child: Scaffold(
       backgroundColor: palette.background,
       appBar: AppBar(
         backgroundColor: palette.background,
@@ -189,7 +211,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         systemOverlayStyle: SystemUiOverlayStyle.dark,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new, size: AppSpacing.iconSm, color: palette.textPrimary),
-          onPressed: () => Navigator.pop(context, _changed),
+          onPressed: _handleClose,
         ),
         title: Text('Edit profile',
             style: AppTypography.headingMedium.copyWith(color: palette.textPrimary)),
@@ -270,6 +292,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

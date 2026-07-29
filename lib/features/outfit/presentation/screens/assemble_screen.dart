@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../common/common.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../wardrobe/domain/entities/wardrobe_item_entity.dart';
 import '../../../wardrobe/presentation/state/wardrobe_state.dart';
@@ -45,6 +46,20 @@ class _AssembleScreenState extends ConsumerState<AssembleScreen> {
     _nameController.dispose();
     super.dispose();
   }
+
+  /// Has the user changed the ensemble (name or pieces) since it opened?
+  /// Compared against [widget.initial] so an untouched screen closes silently.
+  bool get _hasUnsavedChanges {
+    final initialName = widget.initial?.name ?? '';
+    final initialItems = (widget.initial?.items ?? const <String>[]).toSet();
+    if (_nameController.text.trim() != initialName.trim()) return true;
+    final current = _selectedIds.toSet();
+    return current.length != initialItems.length || !current.containsAll(initialItems);
+  }
+
+  /// Leaves the screen, confirming first when there are unsaved changes.
+  Future<void> _handleClose() =>
+      guardedPop(context, hasUnsavedChanges: _hasUnsavedChanges);
 
   void _toggle(String itemId) {
     HapticFeedback.selectionClick();
@@ -103,7 +118,13 @@ class _AssembleScreenState extends ConsumerState<AssembleScreen> {
     final selectedItems =
         _selectedIds.map((id) => byId[id]).whereType<WardrobeItemEntity>().toList();
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        _handleClose();
+      },
+      child: Scaffold(
       backgroundColor: palette.background,
       appBar: AppBar(
         backgroundColor: palette.background,
@@ -112,7 +133,7 @@ class _AssembleScreenState extends ConsumerState<AssembleScreen> {
         systemOverlayStyle: SystemUiOverlayStyle.dark,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new, size: AppSpacing.iconSm, color: palette.textPrimary),
-          onPressed: () => Navigator.pop(context),
+          onPressed: _handleClose,
         ),
         title: Text(_isEditing ? 'Edit ensemble' : 'Build an ensemble',
             style: AppTypography.headingMedium.copyWith(color: palette.textPrimary)),
@@ -137,6 +158,7 @@ class _AssembleScreenState extends ConsumerState<AssembleScreen> {
       body: SafeArea(
         top: false,
         child: _body(context, wardrobe, allItems, selectedItems),
+      ),
       ),
     );
   }

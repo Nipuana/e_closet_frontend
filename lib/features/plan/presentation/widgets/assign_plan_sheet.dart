@@ -57,6 +57,17 @@ class _AssignPlanSheetState extends ConsumerState<AssignPlanSheet> {
     });
   }
 
+  /// The user has picked an ensemble they haven't added to the plan yet.
+  bool get _hasUnsavedChanges => _outfitId != widget.initialOutfitId;
+
+  /// Closes the sheet, confirming first when an ensemble was picked but not saved.
+  Future<void> _handleClose() => guardedPop(
+        context,
+        hasUnsavedChanges: _hasUnsavedChanges,
+        message: "You haven't added this to your plan yet. Leave without saving it?",
+        leaveLabel: 'Leave',
+      );
+
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
@@ -121,7 +132,13 @@ class _AssignPlanSheetState extends ConsumerState<AssignPlanSheet> {
       maxChildSize: 0.95,
       expand: false,
       builder: (context, scrollController) {
-        return Container(
+        return PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, _) {
+            if (didPop) return;
+            _handleClose();
+          },
+          child: Container(
           decoration: BoxDecoration(
             color: palette.background,
             borderRadius: AppRadius.topOnly,
@@ -147,7 +164,7 @@ class _AssignPlanSheetState extends ConsumerState<AssignPlanSheet> {
                     const Spacer(),
                     IconButton(
                       icon: Icon(Icons.close, color: palette.textTertiary),
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: _handleClose,
                     ),
                   ],
                 ),
@@ -212,6 +229,7 @@ class _AssignPlanSheetState extends ConsumerState<AssignPlanSheet> {
               ),
             ],
           ),
+        ),
         );
       },
     );
