@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -46,6 +47,12 @@ class GoogleAuthService {
       }
       return idToken;
     } on GoogleSignInException catch (e) {
+      // The user-facing message stays generic, so log the real reason — without
+      // it a failed sign-in is invisible. Note that Android reports a missing
+      // OAuth client (package name + SHA-1 not registered in the Google Cloud
+      // project) as `canceled`: the chooser opens and dismisses itself, which
+      // is indistinguishable from the user backing out.
+      debugPrint('GoogleSignIn failed: code=${e.code} description=${e.description}');
       if (e.code == GoogleSignInExceptionCode.canceled) return null;
       throw GoogleAuthException(e.description ?? 'Google sign-in failed');
     }

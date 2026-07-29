@@ -4,16 +4,9 @@ import 'package:flutter/foundation.dart';
 
 class ApiEndpoints {
   ApiEndpoints._();
-
-  // ─────────────────────────────────────────────
-  // Device / server connection (same setup as the listenly app)
-  // ─────────────────────────────────────────────
-  // Set [isPhysicalDevice] = true when running on a real phone, and point
-  // [computerIpAdress] at your PC's LAN IP (the phone must be on the same
-  // Wi-Fi). For the Android emulator leave it false → uses 10.0.2.2.
   static const bool isPhysicalDevice = true;
 
-  static const String computerIpAdress = "192.168.1.2";
+  static const String computerIpAdress = "192.168.1.7";
 
   static const int port = 5000;
 

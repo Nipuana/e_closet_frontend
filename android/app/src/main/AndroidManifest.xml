@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Flutter only injects INTERNET into the debug/profile manifests, so it has
+         to be declared here or release builds can't reach the API at all. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <!-- Local notifications for plan reminders (Android 13+ runtime permission). -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
