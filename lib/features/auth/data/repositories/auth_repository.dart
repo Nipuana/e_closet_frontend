@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/error/error_messages.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/services/network_info.dart';
 import '../../domain/entities/auth_entity.dart';
@@ -22,6 +23,10 @@ final authRepositoryProvider = Provider<IAuthRepository>((ref) {
     networkInfo: networkInfo,
   );
 });
+
+/// Deliberately vague: a sign-in failure never says which of the two fields was
+/// wrong, and never carries the server's wording.
+const String _badCredentials = 'Incorrect email or password. Please try again.';
 
 class AuthRepository implements IAuthRepository {
   final IAuthLocalDatasource _authLocalDatasource;
@@ -51,10 +56,13 @@ class AuthRepository implements IAuthRepository {
 
         return const Right(true);
       } catch (e) {
-        return Left(ApiFailure(message: e.toString()));
+        return Left(ApiFailure(
+          message: userFacingError(e,
+              fallback: 'Could not create your account. Please try again.'),
+        ));
       }
     } else {
-      return Left(NoInternetFailure(message: 'No internet connection'));
+      return Left(NoInternetFailure(message: kNoInternetFailure));
     }
   }
 
@@ -67,7 +75,7 @@ class AuthRepository implements IAuthRepository {
         final apiModel = await _authRemoteDatasource.login(email, password);
         return Right(apiModel.toEntity());
       } catch (e) {
-        return Left(ApiFailure(message: e.toString()));
+        return Left(ApiFailure(message: userFacingError(e, fallback: _badCredentials)));
       }
     } else {
       // Fallback to local database
@@ -76,9 +84,10 @@ class AuthRepository implements IAuthRepository {
         if (hiveModel != null) {
           return Right(hiveModel.toEntity());
         }
-        return Left(LocalDatabaseFailure(message: 'Invalid credentials'));
+        return Left(LocalDatabaseFailure(message: _badCredentials));
       } catch (e) {
-        return Left(LocalDatabaseFailure(message: e.toString()));
+        return Left(LocalDatabaseFailure(
+            message: userFacingError(e, fallback: _badCredentials)));
       }
     }
   }
@@ -88,14 +97,16 @@ class AuthRepository implements IAuthRepository {
     final isConnected = await _networkInfo.isConnected;
 
     if (!isConnected) {
-      return Left(NoInternetFailure(message: 'No internet connection'));
+      return Left(NoInternetFailure(message: kNoInternetFailure));
     }
 
     try {
       final apiModel = await _authRemoteDatasource.signInWithGoogle(idToken);
       return Right(apiModel.toEntity());
     } catch (e) {
-      return Left(ApiFailure(message: e.toString()));
+      return Left(ApiFailure(
+        message: userFacingError(e, fallback: 'Google sign-in failed. Please try again.'),
+      ));
     }
   }
 
@@ -106,7 +117,7 @@ class AuthRepository implements IAuthRepository {
       if (apiModel != null) {
         return Right(apiModel.toEntity());
       }
-      return Left(UnauthorizedFailure(message: 'User not found'));
+      return Left(UnauthorizedFailure(message: kSessionExpiredFailure));
     } catch (e) {
       // Fallback to local
       try {
@@ -114,9 +125,9 @@ class AuthRepository implements IAuthRepository {
         if (hiveModel != null) {
           return Right(hiveModel.toEntity());
         }
-        return Left(LocalDatabaseFailure(message: 'User not found'));
+        return Left(LocalDatabaseFailure(message: kSessionExpiredFailure));
       } catch (ex) {
-        return Left(LocalDatabaseFailure(message: ex.toString()));
+        return Left(LocalDatabaseFailure(message: userFacingError(ex)));
       }
     }
   }
@@ -130,14 +141,15 @@ class AuthRepository implements IAuthRepository {
       if (remoteResult || localResult) {
         return const Right(true);
       }
-      return Left(LocalDatabaseFailure(message: 'Logout failed'));
+      return Left(LocalDatabaseFailure(message: 'Could not sign you out. Please try again.'));
     } catch (e) {
       // Even if remote fails, try local
       try {
         await _authLocalDatasource.logout();
         return const Right(true);
       } catch (ex) {
-        return Left(LocalDatabaseFailure(message: ex.toString()));
+        return Left(LocalDatabaseFailure(
+            message: userFacingError(ex, fallback: 'Could not sign you out. Please try again.')));
       }
     }
   }
@@ -152,10 +164,13 @@ class AuthRepository implements IAuthRepository {
         final updatedModel = await _authRemoteDatasource.updateUser(apiModel, filePath: filePath);
         return Right(updatedModel.toEntity());
       } catch (e) {
-        return Left(ApiFailure(message: e.toString()));
+        return Left(ApiFailure(
+          message: userFacingError(e,
+              fallback: 'Could not save your profile. Please try again.'),
+        ));
       }
     } else {
-      return Left(NoInternetFailure(message: 'No internet connection'));
+      return Left(NoInternetFailure(message: kNoInternetFailure));
     }
   }
 
@@ -174,10 +189,14 @@ class AuthRepository implements IAuthRepository {
         );
         return Right(message);
       } catch (e) {
-        return Left(ApiFailure(message: e.toString()));
+        return Left(ApiFailure(
+          message: userFacingError(e,
+              fallback: 'Could not change your password. Check your current '
+                  'password and try again.'),
+        ));
       }
     } else {
-      return Left(NoInternetFailure(message: 'No internet connection'));
+      return Left(NoInternetFailure(message: kNoInternetFailure));
     }
   }
 
@@ -190,10 +209,13 @@ class AuthRepository implements IAuthRepository {
         final message = await _authRemoteDatasource.requestPasswordReset(email);
         return Right(message);
       } catch (e) {
-        return Left(ApiFailure(message: e.toString()));
+        return Left(ApiFailure(
+          message: userFacingError(e,
+              fallback: 'Could not send a verification code. Please try again.'),
+        ));
       }
     } else {
-      return Left(NoInternetFailure(message: 'No internet connection'));
+      return Left(NoInternetFailure(message: kNoInternetFailure));
     }
   }
 
@@ -209,10 +231,13 @@ class AuthRepository implements IAuthRepository {
         final token = await _authRemoteDatasource.verifyOtp(email: email, otp: otp);
         return Right(token);
       } catch (e) {
-        return Left(ApiFailure(message: e.toString()));
+        return Left(ApiFailure(
+          message: userFacingError(e,
+              fallback: 'That code is incorrect or has expired. Please try again.'),
+        ));
       }
     } else {
-      return Left(NoInternetFailure(message: 'No internet connection'));
+      return Left(NoInternetFailure(message: kNoInternetFailure));
     }
   }
 
@@ -231,10 +256,13 @@ class AuthRepository implements IAuthRepository {
         );
         return Right(message);
       } catch (e) {
-        return Left(ApiFailure(message: e.toString()));
+        return Left(ApiFailure(
+          message: userFacingError(e,
+              fallback: 'Could not reset your password. Please try again.'),
+        ));
       }
     } else {
-      return Left(NoInternetFailure(message: 'No internet connection'));
+      return Left(NoInternetFailure(message: kNoInternetFailure));
     }
   }
 }

@@ -71,7 +71,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         SnackBarUtils.showSuccess(context, 'Welcome to E-Closet!');
         AppRoutes.pushAndRemoveUntil(context, const MainShell());
       } else if (next.status == AuthStatus.error) {
-        SnackBarUtils.showError(context, next.errorMessage ?? 'Registration failed');
+        SnackBarUtils.showError(
+          context,
+          next.errorMessage ?? 'Could not create your account. Please try again.',
+        );
       }
     });
 

@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/error/error_messages.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/services/network_info.dart';
 import '../../domain/entities/brand_entity.dart';
@@ -27,12 +28,12 @@ class CatalogRepository implements ICatalogRepository {
 
   Future<Either<Failure, T>> _guard<T>(Future<T> Function() action) async {
     if (!await _networkInfo.isConnected) {
-      return Left(NoInternetFailure(message: 'No internet connection'));
+      return Left(NoInternetFailure(message: kNoInternetFailure));
     }
     try {
       return Right(await action());
     } catch (e) {
-      return Left(ApiFailure(message: e.toString()));
+      return Left(ApiFailure(message: userFacingError(e)));
     }
   }
 

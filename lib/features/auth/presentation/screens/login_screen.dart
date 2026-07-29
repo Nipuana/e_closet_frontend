@@ -51,7 +51,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         SnackBarUtils.showSuccess(context, 'Login successful!');
         AppRoutes.pushAndRemoveUntil(context, const MainShell());
       } else if (next.status == AuthStatus.error) {
-        SnackBarUtils.showError(context, next.errorMessage ?? 'Login failed');
+        SnackBarUtils.showError(
+          context,
+          next.errorMessage ?? 'Incorrect email or password. Please try again.',
+        );
       }
     });
 

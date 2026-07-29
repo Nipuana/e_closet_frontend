@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/error/error_messages.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/services/network_info.dart';
 import '../../domain/entities/wardrobe_item_entity.dart';
@@ -40,7 +41,7 @@ class WardrobeRepository implements IWardrobeRepository {
     List<String>? tags,
   }) async {
     if (!await _networkInfo.isConnected) {
-      return Left(NoInternetFailure(message: 'No internet connection'));
+      return Left(NoInternetFailure(message: kNoInternetFailure));
     }
     try {
       final model = await _remoteDatasource.addItem(
@@ -58,7 +59,7 @@ class WardrobeRepository implements IWardrobeRepository {
       );
       return Right(model.toEntity());
     } catch (e) {
-      return Left(ApiFailure(message: e.toString()));
+      return Left(ApiFailure(message: userFacingError(e)));
     }
   }
 
@@ -78,7 +79,7 @@ class WardrobeRepository implements IWardrobeRepository {
     String? imagePath,
   }) async {
     if (!await _networkInfo.isConnected) {
-      return Left(NoInternetFailure(message: 'No internet connection'));
+      return Left(NoInternetFailure(message: kNoInternetFailure));
     }
     try {
       final model = await _remoteDatasource.updateItem(
@@ -97,85 +98,85 @@ class WardrobeRepository implements IWardrobeRepository {
       );
       return Right(model.toEntity());
     } catch (e) {
-      return Left(ApiFailure(message: e.toString()));
+      return Left(ApiFailure(message: userFacingError(e)));
     }
   }
 
   @override
   Future<Either<Failure, List<WardrobeItemEntity>>> getAllItems() async {
     if (!await _networkInfo.isConnected) {
-      return Left(NoInternetFailure(message: 'No internet connection'));
+      return Left(NoInternetFailure(message: kNoInternetFailure));
     }
     try {
       final models = await _remoteDatasource.getAllItems();
       return Right(models.map((m) => m.toEntity()).toList());
     } catch (e) {
-      return Left(ApiFailure(message: e.toString()));
+      return Left(ApiFailure(message: userFacingError(e)));
     }
   }
 
   @override
   Future<Either<Failure, List<WardrobeItemEntity>>> getRecentItems({int limit = 10}) async {
     if (!await _networkInfo.isConnected) {
-      return Left(NoInternetFailure(message: 'No internet connection'));
+      return Left(NoInternetFailure(message: kNoInternetFailure));
     }
     try {
       final models = await _remoteDatasource.getRecentItems(limit: limit);
       return Right(models.map((m) => m.toEntity()).toList());
     } catch (e) {
-      return Left(ApiFailure(message: e.toString()));
+      return Left(ApiFailure(message: userFacingError(e)));
     }
   }
 
   @override
   Future<Either<Failure, List<WardrobeItemEntity>>> getFavoriteItems({int? limit}) async {
     if (!await _networkInfo.isConnected) {
-      return Left(NoInternetFailure(message: 'No internet connection'));
+      return Left(NoInternetFailure(message: kNoInternetFailure));
     }
     try {
       final models = await _remoteDatasource.getFavoriteItems(limit: limit);
       return Right(models.map((m) => m.toEntity()).toList());
     } catch (e) {
-      return Left(ApiFailure(message: e.toString()));
+      return Left(ApiFailure(message: userFacingError(e)));
     }
   }
 
   @override
   Future<Either<Failure, WardrobeItemEntity>> getItem(String itemId) async {
     if (!await _networkInfo.isConnected) {
-      return Left(NoInternetFailure(message: 'No internet connection'));
+      return Left(NoInternetFailure(message: kNoInternetFailure));
     }
     try {
       final model = await _remoteDatasource.getItem(itemId);
       return Right(model.toEntity());
     } catch (e) {
-      return Left(ApiFailure(message: e.toString()));
+      return Left(ApiFailure(message: userFacingError(e)));
     }
   }
 
   @override
   Future<Either<Failure, Unit>> deleteItem(String itemId) async {
     if (!await _networkInfo.isConnected) {
-      return Left(NoInternetFailure(message: 'No internet connection'));
+      return Left(NoInternetFailure(message: kNoInternetFailure));
     }
     try {
       await _remoteDatasource.deleteItem(itemId);
       return const Right(unit);
     } catch (e) {
-      return Left(ApiFailure(message: e.toString()));
+      return Left(ApiFailure(message: userFacingError(e)));
     }
   }
 
   @override
   Future<Either<Failure, WardrobeItemEntity>> markWorn(String itemId) async {
     if (!await _networkInfo.isConnected) {
-      return Left(NoInternetFailure(message: 'No internet connection'));
+      return Left(NoInternetFailure(message: kNoInternetFailure));
     }
     try {
       final model = await _remoteDatasource.markWorn(itemId);
       return Right(model.toEntity());
     } catch (e) {
-      return Left(ApiFailure(message: e.toString()));
+      return Left(ApiFailure(message: userFacingError(e)));
     }
   }
 
@@ -185,7 +186,7 @@ class WardrobeRepository implements IWardrobeRepository {
     required bool isFavorite,
   }) async {
     if (!await _networkInfo.isConnected) {
-      return Left(NoInternetFailure(message: 'No internet connection'));
+      return Left(NoInternetFailure(message: kNoInternetFailure));
     }
     try {
       final model = await _remoteDatasource.toggleFavorite(
@@ -194,7 +195,7 @@ class WardrobeRepository implements IWardrobeRepository {
       );
       return Right(model.toEntity());
     } catch (e) {
-      return Left(ApiFailure(message: e.toString()));
+      return Left(ApiFailure(message: userFacingError(e)));
     }
   }
 }

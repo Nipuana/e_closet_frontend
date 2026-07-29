@@ -99,8 +99,11 @@ class AuthViewModel extends Notifier<AuthState> {
     String? idToken;
     try {
       idToken = await _googleAuthService.signIn();
-    } catch (e) {
-      state = state.copyWith(status: AuthStatus.error, errorMessage: e.toString());
+    } catch (_) {
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: 'Google sign-in failed. Please try again.',
+      );
       return;
     }
 
@@ -114,7 +117,10 @@ class AuthViewModel extends Notifier<AuthState> {
 
     result.fold(
       (failure) {
-        state = state.copyWith(status: AuthStatus.error, errorMessage: failure.message);
+        state = state.copyWith(
+          status: AuthStatus.error,
+          errorMessage: failure.message,
+        );
       },
       (authEntity) {
         state = state.copyWith(

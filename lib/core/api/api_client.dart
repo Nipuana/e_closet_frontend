@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:dio_smart_retry/dio_smart_retry.dart';
+import '../error/exceptions.dart';
 import 'api_endpoints.dart';
 
 final apiClientProvider = Provider<ApiClient>((ref) {
@@ -64,6 +65,26 @@ class ApiClient {
     );
   }
 
+  /// Rethrows a request failure, converting "never reached the server" into
+  /// [NoInternetException].
+  ///
+  /// Datasources wrap [DioException] into a plain `ApiException`, which throws
+  /// away the reason — so a dead network became indistinguishable from the
+  /// server rejecting the request, and the user was told their password was
+  /// wrong when their Wi-Fi was off. Making the distinction here means every
+  /// feature inherits it.
+  Never _rethrow(DioException e) {
+    switch (e.type) {
+      case DioExceptionType.connectionError:
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.sendTimeout:
+      case DioExceptionType.receiveTimeout:
+        throw NoInternetException('Could not reach the server');
+      default:
+        throw e;
+    }
+  }
+
   Future<Response> get(String path, {Map<String, dynamic>? queryParameters, Map<String, dynamic>? headers}) async {
     try {
       final response = await _dio.get(
@@ -72,8 +93,8 @@ class ApiClient {
         options: Options(headers: headers),
       );
       return response;
-    } on DioException {
-      rethrow;
+    } on DioException catch (e) {
+      _rethrow(e);
     }
   }
 
@@ -85,8 +106,8 @@ class ApiClient {
         options: Options(headers: headers),
       );
       return response;
-    } on DioException {
-      rethrow;
+    } on DioException catch (e) {
+      _rethrow(e);
     }
   }
 
@@ -98,8 +119,8 @@ class ApiClient {
         options: Options(headers: headers),
       );
       return response;
-    } on DioException {
-      rethrow;
+    } on DioException catch (e) {
+      _rethrow(e);
     }
   }
 
@@ -111,8 +132,8 @@ class ApiClient {
         options: Options(headers: headers),
       );
       return response;
-    } on DioException {
-      rethrow;
+    } on DioException catch (e) {
+      _rethrow(e);
     }
   }
 
@@ -123,8 +144,8 @@ class ApiClient {
         options: Options(headers: headers),
       );
       return response;
-    } on DioException {
-      rethrow;
+    } on DioException catch (e) {
+      _rethrow(e);
     }
   }
 

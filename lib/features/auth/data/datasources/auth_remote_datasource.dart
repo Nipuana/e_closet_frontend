@@ -160,8 +160,10 @@ class AuthRemoteDatasource implements IAuthRemoteDatasource {
       _apiClient.removeAuthToken();
 
       return true;
-    } on DioException {
-      // Even if remote logout fails, clear local data
+    } catch (_) {
+      // Whatever went wrong remotely — including an unreachable server, which
+      // no longer surfaces as a DioException — the local session must still be
+      // torn down, or the user stays signed in on this device.
       await _secureStorageService.clearTokens();
       await _userSessionService.clearSession();
       _apiClient.removeAuthToken();
